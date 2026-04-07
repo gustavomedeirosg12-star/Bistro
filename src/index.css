@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  
+  --color-primary: #d97706; /* amber-600 */
+  --color-primary-hover: #b45309; /* amber-700 */
+  --color-gold: #ca8a04; /* yellow-600 */
+  --color-gold-hover: #a16207;
+  --color-whatsapp: #25D366;
+  --color-whatsapp-hover: #128C7E;
+  
+  /* Rustic Paper Theme */
+  --color-bg-dark: #f4f1ea; /* Paper background */
+  --color-bg-card: #e7e2d6; /* Slightly darker paper */
+  --color-bg-card-hover: #d1cbbd; /* Hover state */
+  
+  --color-text-main: #2d4a22; /* Dark green text */
+  --color-text-muted: #4a5d23; /* Medium green text */
+  
+  --color-border: #d1cbbd; /* Border color */
+}
+
+body {
+  background-color: var(--color-bg-dark);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+  color: var(--color-text-main);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+/* Override Tailwind dark mode classes to fit the light rustic theme */
+.bg-zinc-950 { background-color: var(--color-bg-dark) !important; }
+.bg-zinc-900 { background-color: var(--color-bg-card) !important; }
+.bg-zinc-800 { background-color: var(--color-bg-card-hover) !important; }
+
+.text-white, .text-zinc-50, .text-zinc-100 { color: var(--color-text-main) !important; }
+.text-zinc-300, .text-zinc-400, .text-zinc-500 { color: var(--color-text-muted) !important; }
+
+.border-zinc-900, .border-zinc-800, .border-zinc-700 { border-color: var(--color-border) !important; }
+
+/* Keep primary buttons white text */
+.bg-primary { color: #ffffff !important; }
+.bg-whatsapp { color: #ffffff !important; }
+.bg-red-600 { color: #ffffff !important; }
+.bg-red-500 { color: #ffffff !important; }
+.bg-zinc-800.text-white { color: #ffffff !important; }
+
+/* Real white for dark backgrounds */
+.text-real-white { color: #ffffff !important; }
+.text-real-white-muted { color: #e4e4e7 !important; }
+
+/* Custom scrollbar for a premium feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}

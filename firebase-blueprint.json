@@ -1,0 +1,145 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the application, potentially an admin.",
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "description": "The role of the user, e.g., 'admin'."
+        }
+      }
+    },
+    "Product": {
+      "title": "Product",
+      "description": "A product available in the catalog.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the product."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the product."
+        },
+        "price": {
+          "type": "number",
+          "description": "The regular price of the product."
+        },
+        "promotionalPrice": {
+          "type": "number",
+          "description": "The promotional price of the product, if any."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category the product belongs to."
+        },
+        "image": {
+          "type": "string",
+          "description": "The URL or base64 data of the product image."
+        },
+        "badge": {
+          "type": "string",
+          "description": "An optional badge text, e.g., 'Mais Vendido'."
+        },
+        "popular": {
+          "type": "boolean",
+          "description": "Whether the product is marked as popular."
+        }
+      },
+      "required": ["name", "price", "category", "image"]
+    },
+    "OrderItem": {
+      "title": "OrderItem",
+      "description": "An item within an order.",
+      "type": "object",
+      "properties": {
+        "productId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "number"
+        },
+        "price": {
+          "type": "number"
+        },
+        "observation": {
+          "type": "string"
+        }
+      },
+      "required": ["productId", "name", "quantity", "price"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A customer order.",
+      "type": "object",
+      "properties": {
+        "customerName": {
+          "type": "string"
+        },
+        "customerPhone": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["retirada", "entrega"]
+        },
+        "address": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "payment": {
+          "type": "string",
+          "enum": ["Pix", "Cartão", "Dinheiro"]
+        },
+        "total": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "timestamp"
+        },
+        "coupon": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/OrderItem"
+          }
+        }
+      },
+      "required": ["customerName", "customerPhone", "mode", "payment", "total", "status", "createdAt", "items"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "User profiles and roles."
+    },
+    "products/{productId}": {
+      "schema": {
+        "$ref": "#/entities/Product"
+      },
+      "description": "The catalog of products."
+    },
+    "orders/{orderId}": {
+      "schema": {
+        "$ref": "#/entities/Order"
+      },
+      "description": "Customer orders."
+    }
+  }
+}
