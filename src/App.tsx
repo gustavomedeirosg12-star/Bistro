@@ -12,44 +12,36 @@ import { AdminPanel } from './components/AdminPanel';
 import { Product, CartItem, OrderData } from './types';
 
 export default function App() {
+  // ==========================================
+  // CONTROLE DE SUSPENSÃO DO SITE
+  // Mude para 'false' quando o cliente pagar para reativar o site.
+  // ==========================================
+  const IS_SUSPENDED = false;
+
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
   const [orderData, setOrderData] = useState<OrderData | null>(null);
   const [pixAmount, setPixAmount] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  
-  // Temporary sync script to ensure products match the requested list
-  useEffect(() => {
-    const syncProducts = async () => {
-      if (localStorage.getItem('products_synced_v6')) return;
-      try {
-        const { collection, getDocs, deleteDoc, doc, addDoc } = await import('firebase/firestore');
-        const { db } = await import('./firebase');
-        const { PRODUCTS } = await import('./data');
-        
-        const snapshot = await getDocs(collection(db, 'products'));
-        const deletePromises = snapshot.docs.map(d => deleteDoc(doc(db, 'products', d.id)));
-        await Promise.all(deletePromises);
-        
-        for (const prod of PRODUCTS) {
-          const { id, ...productData } = prod;
-          const cleanData: any = {};
-          Object.entries(productData).forEach(([key, value]) => {
-            if (value !== undefined) cleanData[key] = value;
-          });
-          await addDoc(collection(db, 'products'), cleanData);
-        }
-        localStorage.setItem('products_synced_v6', 'true');
-        console.log('Products synced successfully');
-        window.location.reload();
-      } catch (e) {
-        console.error('Error syncing products:', e);
-      }
-    };
-    syncProducts();
-  }, []);
 
+  if (IS_SUSPENDED) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mb-6">
+          <ShoppingBag className="w-10 h-10 text-zinc-600" />
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold text-zinc-100 mb-4">
+          Site Temporariamente Indisponível
+        </h1>
+        <p className="text-zinc-400 max-w-md text-lg">
+          Este sistema está passando por manutenção ou encontra-se temporariamente suspenso. 
+          Por favor, tente acessar novamente mais tarde.
+        </p>
+      </div>
+    );
+  }
+  
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 300) {

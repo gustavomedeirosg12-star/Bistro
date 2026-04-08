@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { X, Clock, CheckCircle, Truck, XCircle, Trash2, Search } from 'lucide-react';
+import { X, Clock, CheckCircle, Truck, XCircle, Trash2, Search, Printer } from 'lucide-react';
 
 interface OrderItem {
   productId: string;
@@ -35,6 +35,121 @@ export function AdminOrders({ onClose }: AdminOrdersProps) {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('Todos');
+  const [autoPrint, setAutoPrint] = useState(() => {
+    return localStorage.getItem('autoPrintOrders') === 'true';
+  });
+  const previousOrdersRef = React.useRef<Order[]>([]);
+
+  const handlePrint = React.useCallback((order: Order) => {
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    if (!printWindow) return;
+
+    const dateStr = order.createdAt?.toDate 
+      ? order.createdAt.toDate().toLocaleString('pt-BR') 
+      : new Date().toLocaleString('pt-BR');
+
+    const hasPriceOnRequest = order.items.some(item => item.price === 0);
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Pedido #${order.id.slice(0, 8)}</title>
+        <style>
+          body {
+            font-family: monospace;
+            width: 300px;
+            margin: 0 auto;
+            padding: 20px 0;
+            color: #000;
+          }
+          .text-center { text-align: center; }
+          .font-bold { font-weight: bold; }
+          .text-lg { font-size: 1.2rem; }
+          .divider { border-top: 1px dashed #000; margin: 10px 0; }
+          .flex { display: flex; justify-content: space-between; }
+          .mb { margin-bottom: 10px; }
+          .mt { margin-top: 10px; }
+          .item-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+          .item-name { flex: 1; padding-right: 10px; }
+          .obs { font-size: 0.9em; margin-left: 15px; margin-bottom: 5px; }
+          @media print {
+            @page { margin: 0; }
+            body { margin: 1cm; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="text-center mb">
+          <div class="font-bold text-lg">NOVO PEDIDO</div>
+          <div>${dateStr}</div>
+          <div>ID: ${order.id.slice(0, 8)}</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="mb">
+          <div class="font-bold">CLIENTE:</div>
+          <div>${order.customerName}</div>
+          <div>Tel: ${order.customerPhone}</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="mb">
+          <div class="font-bold">TIPO: ${order.mode.toUpperCase()}</div>
+          ${order.mode === 'entrega' && order.address ? `<div>Endereço: ${order.address}</div>` : ''}
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="mb font-bold">ITENS:</div>
+        ${order.items.map(item => `
+          <div class="item-row">
+            <div class="item-name">${item.quantity}x ${item.name}</div>
+            <div>${item.price === 0 ? 'A Consultar' : 'R$ ' + (item.price * item.quantity).toFixed(2).replace('.', ',')}</div>
+          </div>
+          ${item.observation ? `<div class="obs">Obs: ${item.observation}</div>` : ''}
+        `).join('')}
+
+        <div class="divider"></div>
+
+        <div class="mb">
+          <div class="flex">
+            <span>Pagamento:</span>
+            <span>${order.payment}</span>
+          </div>
+          ${order.coupon ? `
+          <div class="flex">
+            <span>Cupom:</span>
+            <span>${order.coupon}</span>
+          </div>` : ''}
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="flex font-bold text-lg mt">
+          <span>TOTAL:</span>
+          <span>${hasPriceOnRequest ? 'A Consultar' : 'R$ ' + order.total.toFixed(2).replace('.', ',')}</span>
+        </div>
+
+        <div class="text-center mt" style="margin-top: 30px;">
+          <div>Obrigado pela preferência!</div>
+        </div>
+
+        <script>
+          window.onload = () => {
+            window.print();
+            setTimeout(() => window.close(), 500);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  }, []);
 
   useEffect(() => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
@@ -43,6 +158,22 @@ export function AdminOrders({ onClose }: AdminOrdersProps) {
       snapshot.forEach((doc) => {
         ords.push({ id: doc.id, ...doc.data() } as Order);
       });
+
+      // Handle auto-print for new orders
+      if (previousOrdersRef.current.length > 0) {
+        const newOrders = ords.filter(o => !previousOrdersRef.current.some(prev => prev.id === o.id));
+        if (autoPrint) {
+          newOrders.forEach(order => {
+            // Only auto-print if it's a recent order (created in the last 5 minutes)
+            const isRecent = order.createdAt?.toDate && (new Date().getTime() - order.createdAt.toDate().getTime() < 5 * 60000);
+            if (isRecent) {
+              handlePrint(order);
+            }
+          });
+        }
+      }
+
+      previousOrdersRef.current = ords;
       setOrders(ords);
       setLoading(false);
     }, (error) => {
@@ -51,7 +182,13 @@ export function AdminOrders({ onClose }: AdminOrdersProps) {
       handleFirestoreError(error, OperationType.LIST, 'orders');
     });
     return () => unsubscribe();
-  }, []);
+  }, [autoPrint, handlePrint]);
+
+  const toggleAutoPrint = () => {
+    const newValue = !autoPrint;
+    setAutoPrint(newValue);
+    localStorage.setItem('autoPrintOrders', String(newValue));
+  };
 
   const updateStatus = async (id: string, newStatus: Order['status']) => {
     try {
@@ -98,7 +235,20 @@ export function AdminOrders({ onClose }: AdminOrdersProps) {
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-zinc-200 shrink-0">
-          <h2 className="text-xl md:text-2xl font-serif font-bold text-zinc-900">Gerenciar Pedidos</h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl md:text-2xl font-serif font-bold text-zinc-900">Gerenciar Pedidos</h2>
+            <label className="flex items-center gap-2 cursor-pointer bg-zinc-100 px-3 py-1.5 rounded-lg border border-zinc-200 hover:bg-zinc-200 transition-colors">
+              <input 
+                type="checkbox" 
+                checked={autoPrint} 
+                onChange={toggleAutoPrint}
+                className="w-4 h-4 text-primary rounded border-zinc-300 focus:ring-primary"
+              />
+              <span className="text-sm font-medium text-zinc-700 flex items-center gap-1">
+                <Printer className="w-4 h-4" /> Auto-Imprimir
+              </span>
+            </label>
+          </div>
           <button onClick={onClose} className="p-2 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-full transition-colors">
             <X className="w-6 h-6" />
           </button>
@@ -160,6 +310,13 @@ export function AdminOrders({ onClose }: AdminOrdersProps) {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handlePrint(order)}
+                      className="p-1.5 text-zinc-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                      title="Imprimir Pedido"
+                    >
+                      <Printer className="w-5 h-5" />
+                    </button>
                     <select
                       value={order.status}
                       onChange={(e) => updateStatus(order.id, e.target.value as Order['status'])}

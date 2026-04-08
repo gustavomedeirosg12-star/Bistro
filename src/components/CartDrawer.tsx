@@ -298,17 +298,17 @@ export function CartDrawer({ isOpen, onClose, items, onUpdateQuantity, onUpdateO
                   <div className="space-y-3 mb-6">
                     <div className="flex justify-between text-zinc-400">
                       <span>Subtotal</span>
-                      <span>{cart.some(i => i.product.price === 0) ? 'Consultar preço' : `R$ ${subtotal.toFixed(2).replace('.', ',')}`}</span>
+                      <span>{items.some(i => i.product.price === 0) ? 'Consultar preço' : `R$ ${subtotal.toFixed(2).replace('.', ',')}`}</span>
                     </div>
                     {formData.mode === 'entrega' && (
                       <div className="flex justify-between text-zinc-400">
                         <span>Taxa de entrega</span>
-                        <span>{cart.some(i => i.product.price === 0) ? 'A combinar' : `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`}</span>
+                        <span>{items.some(i => i.product.price === 0) ? 'A combinar' : `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-white font-bold text-lg pt-3 border-t border-zinc-800">
                       <span>Total</span>
-                      <span className="text-primary">{cart.some(i => i.product.price === 0) ? 'Consultar preço' : `R$ ${total.toFixed(2).replace('.', ',')}`}</span>
+                      <span className="text-primary">{items.some(i => i.product.price === 0) ? 'Consultar preço' : `R$ ${total.toFixed(2).replace('.', ',')}`}</span>
                     </div>
                   </div>
 
